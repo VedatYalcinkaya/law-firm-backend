@@ -2,33 +2,84 @@ package com.demirciyazilim.avukatrefwebsite.entity;
 
 import com.demirciyazilim.avukatrefwebsite.entity.enums.Role;
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
+import org.springframework.security.core.userdetails.UserDetails;
 
+import java.time.LocalDate;
+import java.util.List;
 
-
-@Entity
+@AllArgsConstructor
+@NoArgsConstructor
 @Table(name = "users")
+@Builder
+@Entity
 @Getter
 @Setter
-public class User {
+public class User implements UserDetails {
 
     @Id
+    @Column(name="id")
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id", nullable = false)
-    private Long id;
+    private int id;
 
-    @Column(nullable = false, unique = true)
-    private String username;
+    @Column(name="created_date" ,nullable = true)
+    private LocalDate createdDate;
 
-    @Column(nullable = false)
+    @Column(name="updated_date",nullable = true)
+    private LocalDate updatedDate;
+
+    @PrePersist
+    private void beforeAdd() {
+        createdDate = LocalDate.now();
+    }
+
+    @PreUpdate
+    private void beforeUpdate() {
+        updatedDate = LocalDate.now();
+    }
+
+    @Column(name = "email")
+    private String email;
+
+    @Column(name = "password")
     private String password;
 
-    @Column(nullable = false)
+    @JoinTable(name="roles", joinColumns = @JoinColumn(name="user_id"))
+    @Column(name="role")
     @Enumerated(EnumType.STRING)
-    private Role role; // Could be "ADMIN" or "USER", or we can create an Enum
+    private List<Role> authorities;
 
-    @Column(nullable = false)
-    private boolean active = true;
+    @Column(name = "user_image_path")
+    private String userImagePath;
 
+
+    @Override
+    public String getPassword() {
+        return password;
+    }
+
+    @Override
+    public String getUsername() {
+        return email;
+    }
+
+    @Override
+    public boolean isAccountNonExpired() {
+        return true;
+    }
+
+    @Override
+    public boolean isAccountNonLocked() {
+        return true;
+    }
+
+    @Override
+    public boolean isCredentialsNonExpired() {
+        return true;
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return true;
+    }
 }

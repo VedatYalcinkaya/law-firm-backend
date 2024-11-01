@@ -1,64 +1,102 @@
 package com.demirciyazilim.avukatrefwebsite.service.concretes;
 
+import com.demirciyazilim.avukatrefwebsite.core.utilities.exceptions.types.BusinessException;
 import com.demirciyazilim.avukatrefwebsite.core.utilities.mapper.ModelMapperService;
 import com.demirciyazilim.avukatrefwebsite.dto.user.requests.AddUserRequest;
 import com.demirciyazilim.avukatrefwebsite.dto.user.requests.UpdateUserRequest;
 import com.demirciyazilim.avukatrefwebsite.dto.user.responses.GetAllUserResponse;
-import com.demirciyazilim.avukatrefwebsite.dto.user.responses.GetUserByIdResponse;
+import com.demirciyazilim.avukatrefwebsite.dto.user.responses.GetByIdUserResponse;
 import com.demirciyazilim.avukatrefwebsite.entity.User;
 import com.demirciyazilim.avukatrefwebsite.repository.UserRepository;
 import com.demirciyazilim.avukatrefwebsite.service.abstracts.UserService;
+import com.demirciyazilim.avukatrefwebsite.service.constants.Messages;
 import lombok.AllArgsConstructor;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @AllArgsConstructor
 public class UserManager implements UserService {
-
     private final UserRepository userRepository;
     private final ModelMapperService modelMapperService;
 
-
     @Override
-    public void add(AddUserRequest request) {
+    public User add(AddUserRequest request) {
+        chechIsUserEmailExists(request.getEmail());
+        checkUserPasswordLength(request.getPassword());
         User user = this.modelMapperService.forRequest().map(request, User.class);
-        userRepository.save(user);
+        this.userRepository.save(user);
+        return user;
     }
 
-    // Kullanıcı güncelleme işlemi
+    @Override
+    public void delete(int id) {
+        User userToDelete = findUser(id);
+        userRepository.delete(userToDelete);
+    }
+
     @Override
     public void update(UpdateUserRequest request) {
-        User existingUser = userRepository.findById(request.getId())
-                .orElseThrow(() -> new RuntimeException("Kullanıcı bulunamadı"));
-
-        User updatedUser = modelMapperService.forRequest().map(request, User.class);
-        updatedUser.setId(existingUser.getId());  // ID sabit kalmalı, çünkü update yapıyoruz
-
-        userRepository.save(updatedUser);
-    }
-
-    // Kullanıcıyı silme işlemi
-    @Override
-    public void delete(Long id) {
-        User user = userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Kullanıcı bulunamadı"));
-        userRepository.delete(user);
+        User userToUpdate =findUser(request.getId());
+        checkUserPasswordLength(request.getPassword());
+        this.modelMapperService.forRequest().map(request, userToUpdate);
+        userRepository.saveAndFlush(userToUpdate);
     }
 
     @Override
     public List<GetAllUserResponse> getAll() {
         List<User> users = userRepository.findAll();
-        return users.stream()
-                .map(user -> modelMapperService.forResponse().map(user, GetAllUserResponse.class))
-                .collect(Collectors.toList());
+        List<GetAllUserResponse> responses = users.stream()
+                .map(user -> this.modelMapperService.forResponse()
+                        .map(user, GetAllUserResponse.class))
+                .toList();
+        return responses;
     }
+
     @Override
-    public GetUserByIdResponse getById(Long id) {
-        User user = userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Kullanıcı bulunamadı"));
-        return modelMapperService.forResponse().map(user, GetUserByIdResponse.class);
+    public GetByIdUserResponse getById(int id) {
+        User user = findUser(id);
+        GetByIdUserResponse response = this.modelMapperService.forResponse().map(user, GetByIdUserResponse.class);
+        return response;
+    }
+
+    @Override
+    public GetByIdUserResponse getByEmail(String email) {
+        User user = findUserByEmail(email);
+        GetByIdUserResponse response = this.modelMapperService.forResponse().map(user,GetByIdUserResponse.class);
+        return response;
+    }
+
+    @Override
+    public boolean existsUserById(int id) {
+        return userRepository.existsById(id);
+    }
+
+    @Override
+    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+        User user = findUserByEmail(username);
+        return user;
+    }
+
+    private void chechIsUserEmailExists(String email) {
+        if (userRepository.findByEmail(email).isPresent()) {
+            throw new BusinessException(Messages.emailAlreadyExists);
+        }
+    }
+    private void checkUserPasswordLength(String password){
+        if (password.length()<8){
+            throw new BusinessException(Messages.passwordLength);
+        }
+    }
+    private User findUser(int value){
+        return userRepository.findById(value)
+                .orElseThrow(()-> new BusinessException(Messages.userNotFound));
+    }
+    private User findUserByEmail(String email){
+        return userRepository.findByEmail(email)
+                .orElseThrow(()-> new BusinessException(Messages.userNotFound));
     }
 }
