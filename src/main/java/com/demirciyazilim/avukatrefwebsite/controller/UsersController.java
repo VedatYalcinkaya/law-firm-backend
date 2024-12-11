@@ -4,6 +4,7 @@ package com.demirciyazilim.avukatrefwebsite.controller;
 import com.demirciyazilim.avukatrefwebsite.dto.user.requests.AddUserRequest;
 import com.demirciyazilim.avukatrefwebsite.dto.user.requests.UpdateUserRequest;
 import com.demirciyazilim.avukatrefwebsite.dto.user.responses.GetAllUserResponse;
+import com.demirciyazilim.avukatrefwebsite.dto.user.responses.GetByEmailUserResponse;
 import com.demirciyazilim.avukatrefwebsite.dto.user.responses.GetByIdUserResponse;
 import com.demirciyazilim.avukatrefwebsite.service.abstracts.UserService;
 import jakarta.validation.Valid;
@@ -45,7 +46,7 @@ public class UsersController {
     }
 
     @GetMapping("/getByEmail")
-    public GetByIdUserResponse getByEmail(String email){
+    public GetByEmailUserResponse getByEmail(String email){
         return userService.getByEmail(email);
     }
 }

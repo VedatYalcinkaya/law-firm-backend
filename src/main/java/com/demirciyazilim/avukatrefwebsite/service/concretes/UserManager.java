@@ -5,6 +5,7 @@ import com.demirciyazilim.avukatrefwebsite.core.utilities.mapper.ModelMapperServ
 import com.demirciyazilim.avukatrefwebsite.dto.user.requests.AddUserRequest;
 import com.demirciyazilim.avukatrefwebsite.dto.user.requests.UpdateUserRequest;
 import com.demirciyazilim.avukatrefwebsite.dto.user.responses.GetAllUserResponse;
+import com.demirciyazilim.avukatrefwebsite.dto.user.responses.GetByEmailUserResponse;
 import com.demirciyazilim.avukatrefwebsite.dto.user.responses.GetByIdUserResponse;
 import com.demirciyazilim.avukatrefwebsite.entity.User;
 import com.demirciyazilim.avukatrefwebsite.repository.UserRepository;
@@ -64,9 +65,9 @@ public class UserManager implements UserService {
     }
 
     @Override
-    public GetByIdUserResponse getByEmail(String email) {
+    public GetByEmailUserResponse getByEmail(String email) {
         User user = findUserByEmail(email);
-        GetByIdUserResponse response = this.modelMapperService.forResponse().map(user,GetByIdUserResponse.class);
+        GetByEmailUserResponse response = this.modelMapperService.forResponse().map(user,GetByEmailUserResponse.class);
         return response;
     }
 

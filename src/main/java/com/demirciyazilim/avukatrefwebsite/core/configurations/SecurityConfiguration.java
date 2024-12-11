@@ -39,9 +39,6 @@ public class SecurityConfiguration {
             "/v3/api-docs/**",
             "/api/auth/**",
             "/api/fileUpload/upload",
-            "/api/users/**",
-            "/api/rentals/**"
-
     };
   
 
@@ -51,15 +48,34 @@ public class SecurityConfiguration {
                 .cors(Customizer.withDefaults())
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(authorizeHttpRequests->
-                        authorizeHttpRequests.requestMatchers(WHITE_LIST_URLS).permitAll()
-                                .requestMatchers(HttpMethod.GET,"/**").permitAll()
-                                .requestMatchers(HttpMethod.POST,"/**").permitAll()
-                                .requestMatchers(HttpMethod.PUT,"/**").permitAll()
-                                .requestMatchers(HttpMethod.PUT,"/api/users/**").permitAll()
-                                .requestMatchers(HttpMethod.PUT,"/api/customers/**").permitAll()
-                                .requestMatchers(HttpMethod.PUT,"/api/corporateCustomers/**").permitAll()
+                        authorizeHttpRequests
+                                // Bu URL'lere tüm kullanıcılar erişebilir
+                                .requestMatchers(WHITE_LIST_URLS).permitAll()
 
-                                .requestMatchers(HttpMethod.DELETE,"/api/**").permitAll())
+                                // Admin erişimi gerektiren URL'ler
+//                                .requestMatchers("/api/articles/**").hasRole("ADMIN")
+
+                                // Kullanıcı ekleme, güncelleme, silme gibi işlemler için yetkilendirme
+                                .requestMatchers(HttpMethod.POST, "/api/users/**").hasRole("ADMIN")
+                                .requestMatchers(HttpMethod.PUT, "/api/users/**").hasRole("ADMIN")
+                                .requestMatchers(HttpMethod.DELETE, "/api/users/**").hasRole("ADMIN")
+
+                                //Contact görme, silme
+                                .requestMatchers(HttpMethod.GET,"api/contacts/**").hasRole("ADMIN")
+                                .requestMatchers(HttpMethod.PUT,"api/contacts/**").hasRole("ADMIN")
+                                .requestMatchers(HttpMethod.DELETE,"api/contacts/**").hasRole("ADMIN")
+
+
+
+                                // Makale ekleme, düzenleme için admin yetkisi gerekli
+                                .requestMatchers(HttpMethod.POST, "/api/articles/**").hasRole("ADMIN")
+                                .requestMatchers(HttpMethod.PUT, "/api/articles/**").hasRole("ADMIN")
+                                .requestMatchers(HttpMethod.DELETE, "/api/articles/**").hasRole("ADMIN")
+                                .requestMatchers(HttpMethod.GET,"api/articles/**").permitAll()
+
+                                // Diğer tüm isteklere kullanıcı girişi gereklidir.
+                                .anyRequest().permitAll()
+                )
                 .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authenticationProvider(authenticationProvider)
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
